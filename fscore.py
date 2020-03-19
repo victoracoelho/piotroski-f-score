@@ -12,10 +12,10 @@ def roa(df):
 ### FUNÇÃO PARA TRANSFORMAR O FCO DE STRING PARA FLOAT
 def fco(df2):
     fco = df2[1]
-    if '01/01/2019 a 31/12/2019 (R$ mil)' in fco:
-        fco = fco['01/01/2019 a 31/12/2019 (R$ mil)'][1]
-    elif '01/01/2019 a 30/09/2019 (R$ mil)' in fco:
-        fco = fco['01/01/2019 a 30/09/2019 (R$ mil)'][1]
+    listafco = ['01/01/2019 a 31/12/2019 (R$ mil)', '01/01/2019 a 30/09/2019 (R$ mil)']
+    for pos in listafco:
+        if pos in fco:
+            fco = fco[pos][1]
     fco = fco.replace('.', '')
     return float(fco)
 
@@ -24,14 +24,17 @@ def fco(df2):
 def roa_var(df3, df4):
     dre = df3[1]
     bp = df4[1]
-    if '01/01/2019 a 31/12/2019 (R$ mil)' in dre:
-        dre1 = float(dre['01/01/2019 a 31/12/2019 (R$ mil)'][34].replace('.', ''))
-    elif '01/01/2019 a 30/09/2019 (R$ mil)' in dre:
-        dre1 = float(dre['01/01/2019 a 30/09/2019 (R$ mil)'][26].replace('.', ''))
-    if '01/01/2018 a 31/12/2018 (R$ mil)' in dre:
-        dre2 = float(dre['01/01/2018 a 31/12/2018 (R$ mil)'][34].replace('.', ''))
-    elif '01/01/2018 a 30/09/2018 (R$ mil)' in dre:
-        dre2 = float(dre['01/01/2018 a 30/09/2018 (R$ mil)'][26].replace('.', ''))
+    listadre = list(dre['Descrição'])
+    for c, v in enumerate(listadre):
+        if v == 'Lucro/Prejuízo Consolidado do Período':
+            if '01/01/2019 a 31/12/2019 (R$ mil)' in dre:
+                dre1 = float(dre['01/01/2019 a 31/12/2019 (R$ mil)'][c].replace('.', ''))
+            elif '01/01/2019 a 30/09/2019 (R$ mil)' in dre:
+                dre1 = float(dre['01/01/2019 a 30/09/2019 (R$ mil)'][c].replace('.', ''))
+            if '01/01/2018 a 31/12/2018 (R$ mil)' in dre:
+                dre2 = float(dre['01/01/2018 a 31/12/2018 (R$ mil)'][c].replace('.', ''))
+            elif '01/01/2018 a 30/09/2018 (R$ mil)' in dre:
+                dre2 = float(dre['01/01/2018 a 30/09/2018 (R$ mil)'][c].replace('.', ''))
     if '31/12/2019 (R$ mil)' in bp:
         bp1 = float(bp['31/12/2019 (R$ mil)'][1].replace('.', ''))
     elif '30/09/2019 (R$ mil)' in bp:
@@ -43,7 +46,7 @@ def roa_var(df3, df4):
     roa_var = (dre1/bp1) - (dre2/bp2)
     return roa_var
 
-################## CONSERTAR FUNÇÕES ABAIXO ##################
+
 def lucroliq(df):
     lucro = df[3][1][5].replace('R$', '')
     lucro = lucro.replace('B', '')
@@ -60,18 +63,43 @@ def alavancagem(df):
     divida = divida.replace(',', '.')
     divida = divida.replace('B', '')
     divida = divida.replace('M', '')
-    divida = float(divida.strip())
+    if '-' in divida:
+        divida = float(divida.replace('-', ''))
+        divida = 0 - divida
+    else:
+        divida = float(divida)
     ebitda = df[3]
     ebitda = ebitda[1][4]
     ebitda = ebitda.replace('R$', '')
     ebitda = ebitda.replace(',', '.')
     ebitda = ebitda.replace('B', '')
     ebitda = ebitda.replace('M', '')
-    ebitda = ebitda.replace('-', '')
-    ebitda = float(ebitda.strip())
+    if '-' in ebitda:
+        ebitda = float(ebitda.replace('-', ''))
+        ebitda = 0 - ebitda
+    else:
+        ebitda = float(ebitda)
     alav = divida / ebitda
     return alav
 
+
+def liqcorr(df4, df5):
+    listaliq19 = ['30/09/2019 (R$ mil)', '31/12/2019 (R$ mil)']
+    listaliq18 = ['30/09/2018 (R$ mil)', '31/12/2018 (R$ mil)']
+    ativo = df4[1]
+    passivo = df5[1]
+    for pos in listaliq19:
+        if pos in ativo:
+            ativo1 = float(ativo[pos][2].replace('.', ''))
+        if pos in passivo:
+            passivo1 = float(passivo[pos][2].replace('.', ''))
+    for pos in listaliq18:
+        if pos in ativo:
+            ativo2 = float(ativo[pos][2].replace('.', ''))
+        if pos in passivo:
+            passivo2 = float(passivo[pos][2].replace('.', ''))
+    liqcorr = (ativo1 / passivo1) - (ativo2 / passivo2)
+    return liqcorr
 
 ################################################### PROGRAMA PRINCIPAL ###################################################
 
@@ -107,6 +135,9 @@ if fco(df2) > (lucroliq(df) * 1000000):
     fscore += 1
 
 if alavancagem(df) < 3:
+    fscore += 1
+
+if liqcorr(df4, df5) > 0:
     fscore += 1
 
 print(f'F-Score de Piotroski para o ativo {tick} é igual a {fscore}')
