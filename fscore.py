@@ -12,7 +12,10 @@ def roa(df):
 ### FUNÇÃO PARA TRANSFORMAR O FCO DE STRING PARA FLOAT
 def fco(df2):
     fco = df2[1]
-    fco = fco['01/01/2019 a 31/12/2019 (R$ mil)'][1]
+    if '01/01/2019 a 31/12/2019 (R$ mil)' in fco:
+        fco = fco['01/01/2019 a 31/12/2019 (R$ mil)'][1]
+    elif '01/01/2019 a 30/09/2019 (R$ mil)' in fco:
+        fco = fco['01/01/2019 a 30/09/2019 (R$ mil)'][1]
     fco = fco.replace('.', '')
     return float(fco)
 
@@ -21,10 +24,22 @@ def fco(df2):
 def roa_var(df3, df4):
     dre = df3[1]
     bp = df4[1]
-    dre1 = float(dre['01/01/2019 a 31/12/2019 (R$ mil)'][34].replace('.', ''))
-    dre2 = float(dre['01/01/2018 a 31/12/2018 (R$ mil)'][34].replace('.', ''))
-    bp1 = float(bp['31/12/2019 (R$ mil)'][1].replace('.', ''))
-    bp2 = float(bp['31/12/2018 (R$ mil)'][1].replace('.', ''))
+    if '01/01/2019 a 31/12/2019 (R$ mil)' in dre:
+        dre1 = float(dre['01/01/2019 a 31/12/2019 (R$ mil)'][34].replace('.', ''))
+    elif '01/01/2019 a 30/09/2019 (R$ mil)' in dre:
+        dre1 = float(dre['01/01/2019 a 30/09/2019 (R$ mil)'][26].replace('.', ''))
+    if '01/01/2018 a 31/12/2018 (R$ mil)' in dre:
+        dre2 = float(dre['01/01/2018 a 31/12/2018 (R$ mil)'][34].replace('.', ''))
+    elif '01/01/2018 a 30/09/2018 (R$ mil)' in dre:
+        dre2 = float(dre['01/01/2018 a 30/09/2018 (R$ mil)'][26].replace('.', ''))
+    if '31/12/2019 (R$ mil)' in bp:
+        bp1 = float(bp['31/12/2019 (R$ mil)'][1].replace('.', ''))
+    elif '30/09/2019 (R$ mil)' in bp:
+        bp1 = float(bp['30/09/2019 (R$ mil)'][1].replace('.', ''))
+    if '31/12/2018 (R$ mil)' in bp:
+        bp2 = float(bp['31/12/2018 (R$ mil)'][1].replace('.', ''))
+    elif '30/09/2018 (R$ mil)' in bp:
+        bp2 = float(bp['30/09/2018 (R$ mil)'][1].replace('.', ''))
     roa_var = (dre1/bp1) - (dre2/bp2)
     return roa_var
 
@@ -34,24 +49,30 @@ def lucroliq(df):
     lucro = lucro.replace('B', '')
     lucro = lucro.replace(',', '.')
     lucro = lucro.replace('M', '')
-    if '-' in lucro:
-        lucro = lucro.replace('-', '')
-        float(lucro)
-        lucro = 0 - lucro
-        return lucro
-    else:
-        return float(lucro)
+    lucro = lucro.replace('-', '')
+    return float(lucro.strip())
 
 
-def alavancagem(df4, df5):
-    divida = df5[1]
-    ativos = df4[1]
-    divida1 = float(divida['31/12/2019 (R$ mil)'][47].replace('.', ''))
-    divida2 = float(divida['31/12/2018 (R$ mil)'][47].replace('.', ''))
-    ativos1 = float(ativos['31/12/2019 (R$ mil)'][1].replace('.', ''))
-    ativos2 = float(ativos['31/12/2018 (R$ mil)'][1].replace('.', ''))
-    alav = (ativos1 / divida1) - (ativos2 / divida2)
+def alavancagem(df):
+    divida = df[7]
+    divida = divida[1][5]
+    divida = divida.replace('R$', '')
+    divida = divida.replace(',', '.')
+    divida = divida.replace('B', '')
+    divida = divida.replace('M', '')
+    divida = float(divida.strip())
+    ebitda = df[3]
+    ebitda = ebitda[1][4]
+    ebitda = ebitda.replace('R$', '')
+    ebitda = ebitda.replace(',', '.')
+    ebitda = ebitda.replace('B', '')
+    ebitda = ebitda.replace('M', '')
+    ebitda = ebitda.replace('-', '')
+    ebitda = float(ebitda.strip())
+    alav = divida / ebitda
     return alav
+
+
 ################################################### PROGRAMA PRINCIPAL ###################################################
 
 fscore = 0
@@ -82,10 +103,10 @@ if fco(df2) > 0:
 if roa_var(df3, df4) > 0:
     fscore += 1
 
-if (fco(df2) / 1000000) > lucroliq(df):
+if fco(df2) > (lucroliq(df) * 1000000):
     fscore += 1
 
+if alavancagem(df) < 3:
+    fscore += 1
 
 print(f'F-Score de Piotroski para o ativo {tick} é igual a {fscore}')
-
-print(alavancagem(df4, df5))
