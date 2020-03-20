@@ -46,13 +46,20 @@ def roa_var(df3, df4):
     return roa_var
 
 
+# FUNÇÃO ABAIXO RETORNA O LUCRO LIQUIDO DO ATIVO
 def lucroliq(df):
     lucro = df[3][1][5].replace('R$', '')
     lucro = lucro.replace('B', '')
     lucro = lucro.replace(',', '.')
     lucro = lucro.replace('M', '')
     lucro = lucro.replace('-', '')
-    return float(lucro.strip())
+    if '-' in lucro:
+        lucro = lucro.replace('-', '')
+        lucro = float(lucro)
+        lucro = 0 - lucro
+    else:
+        lucro = float(lucro)
+    return lucro
 
 
 def alavancagem(df):
