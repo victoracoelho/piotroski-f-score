@@ -15,8 +15,7 @@ def fco(df2):
     listafco = ['01/01/2019 a 31/12/2019 (R$ mil)', '01/01/2019 a 30/09/2019 (R$ mil)']
     for pos in listafco:
         if pos in fco:
-            fco = fco[pos][1]
-    fco = fco.replace('.', '')
+            fco = fco[pos][1].replace('.', '')
     return float(fco)
 
 
@@ -101,6 +100,52 @@ def liqcorr(df4, df5):
     liqcorr = (ativo1 / passivo1) - (ativo2 / passivo2)
     return liqcorr
 
+
+def acoes(df):
+    acoes = df[7]
+    lista_acoes = list(acoes[0])
+    for c, v in enumerate(lista_acoes):
+        if v == 'Quant. Ações Ordinárias':
+            acoeson = float(acoes[1][c].replace('.', ''))
+        if v == 'Quant. Ações Preferenciais':
+            acoespn = float(acoes[1][c].replace('.', ''))
+    acoes_var = acoeson - acoespn
+    return acoes_var
+
+
+def margem(df):
+    margem = df[6]
+    listamargem = list(margem[0])
+    for c, v in enumerate(listamargem):
+        if v == 'Margem Bruta':
+            margembt = (margem[1][c].replace('%', ''))
+            margembt = (margembt.replace(',', '.'))
+    return float(margembt)
+
+
+def giro(df3, df4):
+    lista_receita19 = ['01/01/2019 a 31/12/2019 (R$ mil)', '01/01/2019 a 30/09/2019 (R$ mil)']
+    lista_receita18 = ['01/01/2018 a 30/09/2018 (R$ mil)', '01/01/2018 a 31/12/2018 (R$ mil)']
+    lista_ativo19 = ['30/09/2019 (R$ mil)', '31/12/2019 (R$ mil)']
+    lista_ativo18 = ['30/09/2018 (R$ mil)', '31/12/2018 (R$ mil)']
+    receita = df3[1]
+    ativo = df4[1]
+    for pos in lista_receita19:
+        if pos in receita:
+            receita19 = float(receita[pos][1].replace('.', ''))
+    for pos in lista_receita18:
+        if pos in receita:
+            receita18 = float(receita[pos][1].replace('.', ''))
+    for pos in lista_ativo19:
+        if pos in ativo:
+            ativo19 = float(ativo[pos][1].replace('.', ''))
+    for pos in lista_ativo18:
+        if pos in ativo:
+            ativo18 = float(ativo[pos][1].replace('.', ''))
+    giro = (receita19 / ativo19) - (receita18 / ativo18)
+    return giro
+
+
 ################################################### PROGRAMA PRINCIPAL ###################################################
 
 fscore = 0
@@ -138,6 +183,15 @@ if alavancagem(df) < 3:
     fscore += 1
 
 if liqcorr(df4, df5) > 0:
+    fscore += 1
+
+if acoes(df) > 0:
+    fscore += 1
+
+if margem(df) > 15.0:
+    fscore += 1
+
+if giro(df3, df4) > 0:
     fscore += 1
 
 print(f'F-Score de Piotroski para o ativo {tick} é igual a {fscore}')
